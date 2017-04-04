@@ -2,11 +2,9 @@ package main;
 
 import java.awt.AWTException;
 import java.awt.Dimension;
-import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.awt.Robot;
 import java.awt.Toolkit;
-import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -14,7 +12,9 @@ import java.io.IOException;
 import javax.imageio.ImageIO;
 
 /**
- * The Screen object is an object representing the analysis window of a bot : it can retrieve parts of the screen, provide cell size and perform actions using theses cells coordinates.
+ * The Screen object is an object representing the analysis window of a bot : it
+ * can retrieve parts of the screen, provide cell size and perform actions using
+ * theses cells coordinates.
  */
 public class Screen {
 
@@ -29,11 +29,12 @@ public class Screen {
 
 	private static Robot robot;
 
-	private final static Screen screen = Screen.createDefaultScreen();
+	private final static Screen DEFAULT_SCREEN = Screen.createDefaultScreen();
 
 	/**
 	 * Standard constructor to create a new Screen. It is private (factory
-	 * method is provided, and a Singleton is used. Use getDefaultScreen to get the default Screen you can use).
+	 * method is provided, and a Singleton is used. Use getDefaultScreen to get
+	 * the default Screen you can use).
 	 * 
 	 * @param width
 	 *            the screen width
@@ -105,55 +106,48 @@ public class Screen {
 	 * @return the default {@link Screen} object
 	 */
 	public static Screen getDefaultScreen() {
-		return screen;
+		return DEFAULT_SCREEN;
 	}
 
 	/**
-	 * Returns BufferedImage of frame asked, in a 32x32 thumbnail. If the number
-	 * of line or column is too high, returns the last frame of the grid
+	 * Returns a 32*32 grayscale {@link BufferedImage} of the [column, line]
+	 * screen cell
 	 * 
 	 * @param column
-	 *            the column
+	 *            the cell column
 	 * @param line
-	 *            the line
-	 * @return the corresponding screenshot of this part of the Screen
+	 *            the line column
+	 * @return the new {@link BufferedImage} thumbnail
 	 */
-	public BufferedImage getFrame(int column, int line) {
-		if (column > number_column || column < 0 || line > number_lines || line < 0) {
-			throw new IllegalArgumentException("Screen coordinate " + column + " " + line + " is invalid");
-		}
-		Rectangle rectangle = new Rectangle(width_offset + column * 128, height_offset + line * 128, 128, 128);
-		BufferedImage bufferedimage;
+	public BufferedImage getAnalysableCell(int column, int line) {
+		BufferedImage bufferedimage = getScreenCell(column, line);
 
-		bufferedimage = robot.createScreenCapture(rectangle);
-		bufferedimage = scale(bufferedimage, 32, 32);
+		bufferedimage = ImageUtils.convertColorspace(ImageUtils.rescale(bufferedimage, 32, 32),
+				BufferedImage.TYPE_BYTE_GRAY);
 		return bufferedimage;
 	}
 
 	/**
-	 * Provides a new {@link BufferedImage} with the given dimensions, from the
-	 * given source {@link BufferedImage}
+	 * Returns a 128*128 {@link BufferedImage} of the [column, line] screen cell
 	 * 
-	 * @param source
-	 *            the original {@link BufferedImage}
-	 * @param width
-	 *            the thumbnail width
-	 * @param height
-	 *            the thumbnail height
-	 * @return the newly created {@link BufferedImage} thumbnail
+	 * @param column
+	 *            the cell column
+	 * @param line
+	 *            the line column
+	 * @return the new {@link BufferedImage} of the current screen cell value
 	 */
-	private BufferedImage scale(BufferedImage source, int width, int height) {
-		// TODO MOVE
-		int w = width;
-		int h = height;
-		BufferedImage bf = new BufferedImage(32, 32, BufferedImage.TYPE_INT_RGB);
-		Graphics2D g2d = bf.createGraphics();
-		double xScale = (double) w / source.getWidth();
-		double yScale = (double) h / source.getHeight();
-		AffineTransform at = AffineTransform.getScaleInstance(xScale, yScale);
-		g2d.drawRenderedImage(source, at);
-		g2d.dispose();
-		return bf;
+	public BufferedImage getScreenCell(int column, int line) {
+		if (column > number_column || column < 0 || line > number_lines || line < 0) {
+			throw new IllegalArgumentException("Screen coordinate " + column + " " + line + " is invalid");
+		}
+		/*System.out.println(column + " " + line + " " + (width_offset + column * 128) + " "
+				+ (height_offset + line * 128) + " (" + width_offset + "; " + height_offset + ")");*/
+		Rectangle rectangle = new Rectangle(width_offset + column * 128, height_offset + line * 128, 128, 128);
+		return robot.createScreenCapture(rectangle);
+	}
+
+	public BufferedImage getEntireScreen() {
+		return robot.createScreenCapture(new Rectangle(width_offset, height_offset, number_column*128, number_lines*128));
 	}
 
 	/**
@@ -169,19 +163,22 @@ public class Screen {
 
 	public void cutScreen() {
 		// TODO RENAME
-		for (int i = 0; i < number_column; i++) {
-			for (int j = 0; j < number_lines; j++) {
-				BufferedImage bf = getFrame(i, j);
+		try {
+			for (int i = 0; i < number_column; i++) {
+				for (int j = 0; j < number_lines; j++) {
 
-				File file = new File(
-						"img" + File.separator + Integer.toString(i) + "_" + Integer.toString(j) + "." + "jpg");
+					BufferedImage bf = getAnalysableCell(i, j);
+					BufferedImage grayscaleImage = ImageUtils.convertColorspace(bf, BufferedImage.TYPE_BYTE_GRAY);
+					File file = new File(
+							"img" + File.separator + Integer.toString(i) + "_" + Integer.toString(j) + "." + "png");
 
-				try {
-					ImageIO.write(bf, "jpg", file); // ignore returned boolean
-				} catch (IOException e) {
-					System.out.println("Write error for " + file.getPath() + ": " + e.getMessage());
+					ImageIO.write(grayscaleImage, "png", file); // ignore
+																// returned
+																// boolean
 				}
 			}
+		} catch (IOException e) {
+			System.out.println("Write error: " + e.getMessage());
 		}
 	}
 }
