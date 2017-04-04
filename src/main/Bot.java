@@ -3,8 +3,6 @@ package main;
 import java.awt.AWTException;
 import java.awt.Robot;
 
-import javax.xml.ws.WebServiceException;
-
 import org.jnativehook.GlobalScreen;
 import org.jnativehook.NativeHookException;
 
@@ -40,7 +38,7 @@ public class Bot implements Closeable {
 
 
 	@Override
-	public void close() throws WebServiceException {
+	public void close() {
 		try {
 			GlobalScreen.unregisterNativeHook();
 		} catch (NativeHookException e) {}
