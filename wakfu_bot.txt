@@ -1,0 +1,46 @@
+
+// Pour une config a un seul écran --
+
+Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+double width = screenSize.getWidth();
+double height = screenSize.getHeight();
+
+
+Rectangle rectangle = new Rectangle(width/80, height/80);
+
+Robot robot = new Robot();
+Screen screen = new Screen();
+
+
+Object écran, méthode écran pour récupérer des portions de l'écran.
+Width height = 80%, réduit au plus grand multiple de 128 (%128).
+
+
+
+
+//BufferedImage image_a_travailler = robot.createScreenCapture(rectangle);
+
+
+
+public class Screen{
+	
+	private int decallage_width = width - 80%;
+	private int decallage_height // // //;
+
+	int width = 80% de with / 128 * 128
+	height = 80% de height / 128 * 128
+
+	NB ligne et Colonnes créées (width / 128 et height / 128) doit être int
+
+	méthode(int nbligne nb colonne) return BufferedImage : recup une case de l'écran de taille 128 par 128
+	
+	On la transforme en version thumbail 32x32 : 
+		BufferedImage dstImg = Scalr.resize(srcImg, Scalr.Method.QUALITY, 
+    		THUMB_WIDTH, THUMB_HEIGHT);
+	
+
+	
+}
+
+
+méthode cliquer sur une case au milieu
